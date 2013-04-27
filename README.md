@@ -1,13 +1,14 @@
-bcompiler
-=========
+# bcompiler
 
-fix for bcompiler on PHP 5.4+
+This fixes for bcompiler on PHP 5.4+
 
-to install:
+patch merge from: http://goo.gl/zuCMi
 
-  apt-get install php-pear
-  git clone https://github.com/cdsheen/bcompiler.git
-  cd bcompiler/
-  phpize
-  ./configure
-  make install
+## Install:
+
+    apt-get install php-pear
+    git clone https://github.com/cdsheen/bcompiler.git
+    cd bcompiler
+    phpize
+    ./configure
+    make install

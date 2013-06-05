@@ -35,15 +35,15 @@ static void store_zend_llist_element(void* arg, void* data  TSRMLS_DC) {
 
 
 void apc_serialize_zend_llist(zend_llist* list TSRMLS_DC) {
-	char exists;
+	unsigned char exists;
 
 	exists = (list != NULL) ? 1 : 0;
-	SERIALIZE_SCALAR(exists, char);  /* write twice to remove need for peeking. */
+	SERIALIZE_SCALAR(exists, zend_uchar);  /* write twice to remove need for peeking. */
 
 	if (!exists) {
 		return;
 	}
-	SERIALIZE_SCALAR(exists, char);
+	SERIALIZE_SCALAR(exists, zend_uchar);
 	SERIALIZE_SCALAR(list->size, size_t);
 	/** old code: SERIALIZE_SCALAR(list->dtor, void*); */
 	if (BCOMPILERG(current_write) < 0x0005) SERIALIZE_SCALAR(0, ulong); /* dummy 4 bytes */
@@ -61,7 +61,7 @@ void apc_deserialize_zend_llist(zend_llist* list TSRMLS_DC) {
 	int count, i;
 	char* data;
 
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	assert(exists != 0);
 
 	/* read the list parameters */
@@ -88,7 +88,7 @@ void apc_create_zend_llist(zend_llist** list TSRMLS_DC)
 {
 	char exists;
 
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (exists) {
 		*list = (zend_llist*) ecalloc(1, sizeof(zend_llist));
 		apc_deserialize_zend_llist(*list TSRMLS_CC);
@@ -154,14 +154,14 @@ static void adjust_class_handler(zend_class_entry *zc, zend_function *old, zend_
 
 void apc_serialize_hashtable(HashTable* ht, void* funcptr TSRMLS_DC)
 {
-	char exists;    /* for identifying null lists */
+	unsigned char exists;    /* for identifying null lists */
 	Bucket* p;
 	void (*serialize_bucket)(void* TSRMLS_DC);
 
 	serialize_bucket = (void(*)(void* TSRMLS_DC)) funcptr;
 
 	exists = (ht != NULL) ? 1 : 0;
-	SERIALIZE_SCALAR(exists, char);
+	SERIALIZE_SCALAR(exists, zend_uchar);
 	if (!exists) {
 		return;
 	}
@@ -329,13 +329,13 @@ void apc_create_hashtable(HashTable** ht, void* funcptr, void* dptr, int datasiz
 {
 	char exists;    /* for identifying null hashtables */
 
-	/*PEEK_SCALAR(&exists, char); */
-	DESERIALIZE_SCALAR(&exists, char);
+	/*PEEK_SCALAR(&exists, zend_uchar); */
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (exists==1) {
 		*ht = (HashTable*) ecalloc(1, sizeof(HashTable));
 		apc_deserialize_hashtable(*ht, funcptr, dptr, datasize,exists TSRMLS_CC);
 	} else {
-		/* DESERIALIZE_SCALAR(&exists, char); */
+		/* DESERIALIZE_SCALAR(&exists, zend_uchar); */
 		*ht = NULL;
 	}
 }
@@ -653,7 +653,7 @@ void apc_create_arg_info(zend_arg_info* arg_info TSRMLS_DC)
 {
 	char exists;
 
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (!exists) {
 		arg_info = NULL;
 		return; /* arg_types is null */
@@ -700,7 +700,7 @@ void apc_create_arg_types(zend_uchar** arg_types TSRMLS_DC)
 	char exists;
 	zend_uchar count;
 
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (!exists) {
 		*arg_types = NULL;
 		return; /* arg_types is null */
@@ -1049,7 +1049,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 	DESERIALIZE_SCALAR(&zce->name_length, uint);
 
 	zce->parent = NULL;
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (exists > 0) {
 /*
 		// This class knows the name of its parent, most likely because
@@ -1095,7 +1095,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 #endif
 	BCOMPILERG(cur_zc) = zce;
 	BCOMPILER_DEBUG(("-----------------------------\nFUNC TABLE:\n"));
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	apc_deserialize_hashtable(
 		&zce->function_table,
 		(void*) apc_create_zend_function,
@@ -1106,7 +1106,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 
 #ifndef ZEND_ENGINE_2_4 /* todo */
 	BCOMPILER_DEBUG(("-----------------------------\nVARS:\n"));
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	apc_deserialize_hashtable(
 		&zce->default_properties,
 		(void*) apc_create_zval,
@@ -1118,7 +1118,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 #ifdef ZEND_ENGINE_2
 	BCOMPILERG(cur_zc) = zce;
 	BCOMPILER_DEBUG(("-----------------------------\nPROP INFO:\n"));
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	apc_deserialize_hashtable(
 		&zce->properties_info,
 		(void*) apc_create_zend_property_info,
@@ -1133,7 +1133,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 #  ifdef ZEND_ENGINE_2_1
 	if (BCOMPILERG(current_version) >= 0x000c) {
 		BCOMPILER_DEBUG(("-----------------------------\nDEFAULT STATIC MEMBERS:\n"));
-		DESERIALIZE_SCALAR(&exists, char);
+		DESERIALIZE_SCALAR(&exists, zend_uchar);
 		apc_deserialize_hashtable(
 			&zce->default_static_members,
 			(void*) apc_create_zval,
@@ -1146,7 +1146,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 
 # ifndef ZEND_ENGINE_2_4 /* todo */
 	BCOMPILER_DEBUG(("-----------------------------\nSTATICS?:\n"));
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	if (exists) {
 		ALLOC_HASHTABLE(zce->static_members);
 		apc_deserialize_hashtable(
@@ -1173,7 +1173,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 # endif
 
 	BCOMPILER_DEBUG(("-----------------------------\nCONSTANTS:\n"));
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	apc_deserialize_hashtable(
 		&zce->constants_table,
 		(void*) apc_create_zval,
@@ -1250,7 +1250,7 @@ void apc_deserialize_zend_class_entry(zend_class_entry* zce, char **key, int *ke
 	if (key_len) *key_len = 0;
 	if (key) *key = NULL;
 	if (BCOMPILERG(current_version) >= 0x0005) {
-		DESERIALIZE_SCALAR(&exists, char);
+		DESERIALIZE_SCALAR(&exists, zend_uchar);
 		if (exists && key_len && key) {
 			*key_len = apc_create_string_u(key, -1 TSRMLS_CC);
 		}
@@ -1602,7 +1602,7 @@ void apc_serialize_zend_op_array(zend_op_array* zoa TSRMLS_DC)
 #endif
 
 	exists = (zoa->brk_cont_array != NULL) ? 1 : 0;
-	SERIALIZE_SCALAR(exists, char);
+	SERIALIZE_SCALAR(exists, zend_uchar);
 	if (exists) {
 		STORE_BYTES(zoa->brk_cont_array, zoa->last_brk_cont *
 			sizeof(zend_brk_cont_element));
@@ -1742,7 +1742,7 @@ void apc_deserialize_zend_op_array(zend_op_array* zoa, int master TSRMLS_DC)
 	DESERIALIZE_SCALAR(&zoa->uses_globals, zend_bool);
 #endif
 
-	DESERIALIZE_SCALAR(&exists, char);
+	DESERIALIZE_SCALAR(&exists, zend_uchar);
 	zoa->brk_cont_array = NULL;
 	if (exists) {
 		zoa->brk_cont_array = (zend_brk_cont_element*) ecalloc(zoa->last_brk_cont, sizeof(zend_brk_cont_element));

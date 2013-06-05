@@ -195,7 +195,7 @@ enum {
      };
 
 #define BCOMPILER_STDSIZE_03	4,4,4,8,4, 4,4, 4,4,4,4,4
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(_LP64)
 #define BCOMPILER_STDSIZE_05	8,8,1,8,8, 8,8, 8,2,1,1,8
 #else
 #define BCOMPILER_STDSIZE_05	4,4,1,8,4, 4,4, 4,2,1,1,4
